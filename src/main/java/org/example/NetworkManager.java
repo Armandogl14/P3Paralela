@@ -18,5 +18,9 @@ public class NetworkManager {
     public void receiveMessage(int nodeId, Message message) {
         topology.receiveMessage(nodeId, message);
     }
+
+    public void broadcastMessage(int fromNodeId, Message message) {
+        topology.broadcastMessage(fromNodeId, message);
+    }
 }
 

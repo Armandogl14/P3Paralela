@@ -12,6 +12,6 @@ public class Node {
     }
 
     public void recieveMessage(Message message) {
-        System.out.println("Node " + id + " received message: " + message.getContent());
+        System.out.println("Nodo " + id + " mensaje recibido: " + message.getContent());
     }
 }
