@@ -29,7 +29,12 @@ public class Main {
 
         Message meshMessage = new Message("(MeshNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
         meshManager.broadcastMessage(0, meshMessage);
+        //prueba Hypercube Network
+        NetworkManager hypercubeManager = new NetworkManager(new HypercubeNetwork(3));
+        hypercubeManager.setupNetwork(8);
 
+        Message hypercubeMessage = new Message("(HypercubeNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
+        hypercubeManager.broadcastMessage(0, hypercubeMessage);
         return;
     }
 }
