@@ -3,7 +3,7 @@ package org.example;
 public class HypercubeNetwork implements NetworkTopology {
     private int n;
     private int[][] adjMatrix;
-
+    // Constructor
     public HypercubeNetwork(int n) {
         this.n = n;
         this.adjMatrix = new int[(int) Math.pow(2, n)][(int) Math.pow(2, n)];
@@ -20,7 +20,7 @@ public class HypercubeNetwork implements NetworkTopology {
         }
     }
 
-
+    // Métodos
     @Override
     public void setupTopology(int numberOfNodes) {
         this.n = (int) (Math.log(numberOfNodes) / Math.log(2));
