@@ -86,5 +86,12 @@ public class Main {
 
         Message treeMessage = new Message("(TreeNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
         treeManager.broadcastMessage(0, treeMessage);
+
+        //prueba FullyConnected Network
+        NetworkManager fullyConnectedManager = new NetworkManager(new FullyConnectedNetwork());
+        fullyConnectedManager.setupNetwork(5);
+
+        Message fullyConnectedMessage = new Message("(FullyConnectedNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
+        fullyConnectedManager.broadcastMessage(0, fullyConnectedMessage);
     }
 }
