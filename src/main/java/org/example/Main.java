@@ -93,5 +93,12 @@ public class Main {
 
         Message fullyConnectedMessage = new Message("(FullyConnectedNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
         fullyConnectedManager.broadcastMessage(0, fullyConnectedMessage);
+
+        //prueba Switched Network
+        NetworkManager switchedManager = new NetworkManager(new SwitchedNetwork());
+        switchedManager.setupNetwork(5);
+
+        Message switchedMessage = new Message("(SwitchedNetwork): Hola a todos los nodos desde nodo 0!", 0, -1);
+        switchedManager.broadcastMessage(0, switchedMessage);
     }
 }
