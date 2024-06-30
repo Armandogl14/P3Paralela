@@ -18,9 +18,159 @@ Interfaz base que define los métodos comunes para todas las topologías de rede
 
 ### Subclases para cada Topología de Red
 Implementaciones específicas de cada topología de red:
+
 `BusNetwork`
+La clase BusNetwork implementa la interfaz NetworkTopology y simula una topología de red en bus. Aquí te explico cómo funciona:
+
+Características de la Topología en Bus
+En una topología en bus, todos los nodos están conectados a un único canal de comunicación. Esto significa que todos los mensajes enviados a través del bus pueden ser recibidos por todos los nodos, aunque normalmente solo el nodo destinatario procesa el mensaje.
+
+Implementación de BusNetwork
+
+Atributos:
+nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
+executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
+lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
+
+Constructor:
+Inicializa el ConcurrentHashMap para almacenar los nodos.
+Inicializa el ReentrantLock para controlar el acceso concurrente.
+Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
+
+Método setupTopology:
+Crea e inserta los nodos en el ConcurrentHashMap.
+Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
+
+Método sendMessage:
+Encola una tarea en el ExecutorService para enviar un mensaje desde un nodo a otro.
+Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo destino a la vez.
+Llama al método recieveMessage del nodo destino para entregarle el mensaje.
+
+Método receiveMessage:
+Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo receptor a la vez.
+Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
+
+    public class BusNetwork implements NetworkTopology{
+        private ConcurrentHashMap<Integer, Node> nodes;
+        private ExecutorService executor;
+        private ReentrantLock lock;
+
+        public BusNetwork(int numberOfNodes){
+            nodes = new ConcurrentHashMap<>();
+            lock = new ReentrantLock();
+            executor = Executors.newFixedThreadPool(numberOfNodes);
+        }
+
+        @Override
+        public void setupTopology(int numberOfNodes) {
+            lock.lock();
+            try {
+                for (int i = 0; i < numberOfNodes; i++) {
+                    nodes.put(i, new Node(i));
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+            executor.execute(() -> {
+                lock.lock();
+                try {
+                    nodes.get(toNodeId).recieveMessage(message);
+                } finally {
+                    lock.unlock();
+                }
+            });
+        }
+
+        @Override
+        public void receiveMessage(int nodeId, Message message) {
+            lock.lock();
+            try {
+                nodes.get(nodeId).recieveMessage(message);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 
 `RingNetwork`
+La clase RingNetwork implementa la interfaz NetworkTopology y simula una topología de red en anillo. Aquí te explico cómo funciona:
+
+Características de la Topología en Anillo
+En una topología en anillo, cada nodo está conectado exactamente a otros dos nodos, formando un anillo cerrado. Los mensajes son enviados a través del anillo en una dirección (normalmente unidireccional), pasando por cada nodo hasta llegar al destinatario.
+
+Implementación de RingNetwork
+
+Atributos:
+nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
+executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
+lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
+
+Constructor:
+Inicializa el ConcurrentHashMap para almacenar los nodos.
+Inicializa el ReentrantLock para controlar el acceso concurrente.
+Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
+
+Método setupTopology:
+Crea e inserta los nodos en el ConcurrentHashMap.
+Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
+
+Método sendMessage:
+Encola una tarea en el ExecutorService para enviar un mensaje desde un nodo a otro.
+Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo destino a la vez.
+Calcula el ID del siguiente nodo en el anillo (fromNodeId + 1) % nodes.size() y llama al método recieveMessage del nodo siguiente para entregarle el mensaje.
+
+Método receiveMessage:
+Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo receptor a la vez.
+Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
+
+    public class RingNetwork implements NetworkTopology{
+        private ConcurrentHashMap<Integer, Node> nodes;
+        private ExecutorService executor;
+        private ReentrantLock lock;
+
+        public RingNetwork(int numberOfNodes){
+            nodes = new ConcurrentHashMap<>();
+            lock = new ReentrantLock();
+            executor = Executors.newFixedThreadPool(numberOfNodes);
+        }
+        @Override
+        public void setupTopology(int numberOfNodes) {
+            lock.lock();
+            try {
+                for (int i = 0; i < numberOfNodes; i++) {
+                    nodes.put(i, new Node(i));
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+            executor.execute(() -> {
+                lock.lock();
+                try {
+                    int nextNodeId = (fromNodeId + 1) % nodes.size();
+                    nodes.get(nextNodeId).recieveMessage(message);
+                } finally {
+                    lock.unlock();
+                }
+            });
+        }
+
+        @Override
+        public void receiveMessage(int nodeId, Message message) {
+            lock.lock();
+            try {
+                nodes.get(nodeId).recieveMessage(message);
+            } finally {
+                lock.unlock();
+            }
+        }
 
 `MeshNetwork`
 
