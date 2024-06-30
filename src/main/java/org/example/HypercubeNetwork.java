@@ -1,12 +1,18 @@
 package org.example;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class HypercubeNetwork implements NetworkTopology {
     private int n;
     private int[][] adjMatrix;
+    private ExecutorService executorService;
+
     // Constructor
     public HypercubeNetwork(int n) {
         this.n = n;
         this.adjMatrix = new int[(int) Math.pow(2, n)][(int) Math.pow(2, n)];
+        this.executorService = Executors.newFixedThreadPool(4); // Crear un pool de hilos con 4 hilos (puedes ajustar este número)
         for (int i = 0; i < (int) Math.pow(2, n); i++) {
             for (int j = 0; j < (int) Math.pow(2, n); j++) {
                 adjMatrix[i][j] = 0;
@@ -40,12 +46,14 @@ public class HypercubeNetwork implements NetworkTopology {
 
     @Override
     public void sendMessage(int fromNodeId, int toNodeId, Message message) {
-        if (adjMatrix[fromNodeId][toNodeId] == 1) {
-            System.out.println("Message sent from node " + fromNodeId + " to node " + toNodeId);
-            receiveMessage(toNodeId, message);
-        } else {
-            System.out.println("Nodes are not directly connected. Message cannot be sent.");
-        }
+        executorService.submit(() -> {
+            if (adjMatrix[fromNodeId][toNodeId] == 1) {
+                System.out.println("Message sent from node " + fromNodeId + " to node " + toNodeId);
+                receiveMessage(toNodeId, message);
+            } else {
+                System.out.println("Nodes are not directly connected. Message cannot be sent.");
+            }
+        });
     }
 
     @Override
@@ -60,5 +68,9 @@ public class HypercubeNetwork implements NetworkTopology {
                 sendMessage(fromNodeId, i, message);
             }
         }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
     }
 }

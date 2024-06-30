@@ -2,13 +2,17 @@ package org.example;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class FullyConnectedNetwork implements NetworkTopology {
     private List<List<Integer>> adjList;
     private int numberOfNodes;
+    private ExecutorService executorService;
 
     public FullyConnectedNetwork() {
         this.adjList = new ArrayList<>();
+        this.executorService = Executors.newFixedThreadPool(4); // Crear un pool de hilos con 4 hilos (puedes ajustar este número)
     }
 
     @Override
@@ -33,12 +37,14 @@ public class FullyConnectedNetwork implements NetworkTopology {
 
     @Override
     public void sendMessage(int fromNodeId, int toNodeId, Message message) {
-        if (adjList.get(fromNodeId).contains(toNodeId)) {
-            System.out.println("Enviando mensaje desde nodo " + fromNodeId + " a nodo " + toNodeId + ": " + message.getContent());
-            receiveMessage(toNodeId, message);
-        } else {
-            System.out.println("Los nodos no están directamente conectados. No se puede enviar el mensaje.");
-        }
+        executorService.submit(() -> {
+            if (adjList.get(fromNodeId).contains(toNodeId)) {
+                System.out.println("Enviando mensaje desde nodo " + fromNodeId + " a nodo " + toNodeId + ": " + message.getContent());
+                receiveMessage(toNodeId, message);
+            } else {
+                System.out.println("Los nodos no están directamente conectados. No se puede enviar el mensaje.");
+            }
+        });
     }
 
     @Override
@@ -53,5 +59,9 @@ public class FullyConnectedNetwork implements NetworkTopology {
                 sendMessage(fromNodeId, i, message);
             }
         }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
     }
 }
