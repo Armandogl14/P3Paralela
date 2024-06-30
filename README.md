@@ -21,25 +21,30 @@ En una topología en bus, todos los nodos están conectados a un único canal de
 Implementación de BusNetwork
 
 Atributos:
+
 nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
 executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
 lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
 
 Constructor:
+
 Inicializa el ConcurrentHashMap para almacenar los nodos.
 Inicializa el ReentrantLock para controlar el acceso concurrente.
 Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
 
 Método setupTopology:
+
 Crea e inserta los nodos en el ConcurrentHashMap.
 Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
 
 Método sendMessage:
+
 Encola una tarea en el ExecutorService para enviar un mensaje desde un nodo a otro.
 Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo destino a la vez.
 Llama al método recieveMessage del nodo destino para entregarle el mensaje.
 
 Método receiveMessage:
+
 Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo receptor a la vez.
 Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
 
@@ -267,6 +272,100 @@ Utiliza un bucle para enviar el mensaje a todos los nodos excepto al nodo de ori
         }
     }
 `StarNetwork`
+La clase StarNetwork implementa la interfaz NetworkTopology y simula una topología de red en estrella. Aquí te explico cómo funciona:
+
+Características de la Topología en Estrella
+
+En una topología en estrella, todos los nodos están conectados a un nodo central. Este nodo central actúa como un intermediario para todas las comunicaciones entre los nodos.
+
+Implementación de StarNetwork
+
+Atributos:
+
+nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
+executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
+lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
+center: El nodo central al que están conectados todos los demás nodos.
+
+Constructor:
+
+Inicializa el ConcurrentHashMap para almacenar los nodos.
+Inicializa el ReentrantLock para controlar el acceso concurrente.
+Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
+
+Método setupTopology:
+
+Crea e inserta el nodo central (center) y los demás nodos en el ConcurrentHashMap.
+Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
+
+Método sendMessage:
+
+Encola una tarea en el ExecutorService para enviar un mensaje.
+Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo central o al nodo destino a la vez.
+Si el nodo de origen es el nodo central (fromNodeId == 0), envía el mensaje directamente al nodo destino.
+Si el nodo de origen no es el nodo central, envía el mensaje al nodo central, que luego lo reenvía al nodo destino.
+
+Método receiveMessage:
+
+Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo central o al nodo receptor a la vez.
+Si el nodo receptor es el nodo central (nodeId == 0), el mensaje es recibido por el nodo central.
+Si el nodo receptor no es el nodo central, el mensaje es recibido directamente por el nodo receptor.
+
+    public class StarNetwork implements NetworkTopology {
+        private ConcurrentHashMap<Integer, Node> nodes;
+        private ExecutorService executor;
+        private ReentrantLock lock;
+        private Node center;
+
+        public StarNetwork(int numberOfNodes){
+            nodes = new ConcurrentHashMap<>();
+            lock = new ReentrantLock();
+            executor = Executors.newFixedThreadPool(numberOfNodes);
+        }
+
+        @Override
+        public void setupTopology(int numberOfNodes) {
+            lock.lock();
+            try {
+                center = new Node(0);
+                for (int i = 1; i < numberOfNodes; i++) {
+                    nodes.put(i, new Node(i));
+                }
+            } finally {
+            lock.unlock();
+            }
+        }
+
+        @Override
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+            executor.execute(() -> {
+                lock.lock();
+                try {
+                    if (fromNodeId == 0) {
+                        nodes.get(toNodeId).recieveMessage(message);
+                    } else {
+                        center.recieveMessage(message);
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            });
+        }
+
+        @Override
+        public void receiveMessage(int nodeId, Message message) {
+            lock.lock();
+            try {
+                if (nodeId == 0) {
+                    center.recieveMessage(message);
+                } else {
+                    nodes.get(nodeId).recieveMessage(message);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 
 `HypercubeNetwork`
 
@@ -490,3 +589,7 @@ Punto de entrada principal del programa, donde se configuran y ejecutan las topo
 ---
 
 En este proyecto se ejecutaron todas las topologias al mismo tiempo viendo los resultados de los mensajes enviados:
+
+Para probrar el framework simplemente hay que crear una instancian de framework manager y colocar en el contructor la topología de red que se desea utilizar, como por ejemplo:
+
+
