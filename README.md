@@ -1,3 +1,5 @@
+# Armando Gonzalez y Moises Rodriguez
+
 ## Requisitos de Programación Concurrente
 Además de implementar las topologías de redes, se incorporó programación concurrente en las implementaciones utilizando herramientas de concurrencia en Java, tales como:
 
@@ -592,7 +594,17 @@ En este proyecto se ejecutaron todas las topologias al mismo tiempo viendo los r
 
 Para probrar el framework simplemente hay que crear una instancian de framework manager y colocar en el contructor la topología de red que se desea utilizar y luego llamar al método setup network, tanto al constructor como al método se le pasa la cantidad de nodos que tendrá la red. Aquí hay un ejemplo ejemplo:
 
-![Captura del codigo](https://github.com/Armandogl14/P3Paralela/blob/main/Screenshot%202024-06-30%20151805.png)
+    NetworkManager busManager = new NetworkManager(new BusNetwork(5));
+    busManager.setupNetwork(5);
+
+Para enviar un mensaje simplemente creamos una instancia de mensaje con el contenido del mensaje, y luego llamamos al método del manage sendMessage donde le pasamos el nodo que envía el mensaje, el que lo recibe y el mensaje.
+
+    Message busMessage = new Message("(BusNetwork): Hola nodo 2", 1, 2);
+    busManager.sendMessage(1, 2, busMessage);
+
+Aquí tenemos ejemplo de salida para todas las topologías:
+
+![Captura del codigo](https://github.com/Armandogl14/P3Paralela/blob/main/Salida_practica_3.png)
 
 
 
