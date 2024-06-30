@@ -43,7 +43,38 @@ Implementaciones específicas de cada topología de red:
                 }
             }
         }
+   
+        @Override
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+            executorService.submit(() -> {
+                if (adjMatrix[fromNodeId][toNodeId] == 1) {
+                    System.out.println("Message sent from node " + fromNodeId + " to node " + toNodeId);
+                    receiveMessage(toNodeId, message);
+                } else {
+                    System.out.println("Nodes are not directly connected. Message cannot be sent.");
+                }
+            });
+        }
+    
+        @Override
+        public void receiveMessage(int nodeId, Message message) {
+            System.out.println("Node " + nodeId + " received message: " + message.getContent());
+        }
+    
+        @Override
+        public void broadcastMessage(int fromNodeId, Message message) {
+            for (int i = 0; i < adjMatrix[fromNodeId].length; i++) {
+                if (adjMatrix[fromNodeId][i] == 1) {
+                    sendMessage(fromNodeId, i, message);
+                }
+            }
+        }
+    
+        public void shutdown() {
+            executorService.shutdown();
+        }
 
+La clase `HypercubeNetwork`, que implementa una red hipercubo usando una matriz de adyacencia para representar las conexiones entre nodos. Cada nodo está conectado a otros nodos a través de sus vecinos en el hipercubo. La clase incluye métodos para configurar la topología de la red, enviar mensajes entre nodos (usando un `ExecutorService` con un pool de hilos de tamaño fijo para manejar la concurrencia), recibir mensajes y difundir mensajes a todos los nodos vecinos. El método `shutdown` cierra el `ExecutorService` de manera ordenada cuando ya no se necesita.
 `TreeNetwork`
     
      public void setupTopology(int numberOfNodes) {
@@ -63,6 +94,34 @@ Implementaciones específicas de cada topología de red:
           }
           System.out.println("Configurando topología de red en árbol con " + numberOfNodes + " nodos.");
       }
+      @Override
+    public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+        executorService.submit(() -> {
+            if (adjList.get(fromNodeId).contains(toNodeId)) {
+                System.out.println("Enviando mensaje desde nodo " + fromNodeId + " a nodo " + toNodeId + ": " + message.getContent());
+                receiveMessage(toNodeId, message);
+            } else {
+                System.out.println("Los nodos no están directamente conectados. No se puede enviar el mensaje.");
+            }
+        });
+    }
+
+    @Override
+    public void receiveMessage(int nodeId, Message message) {
+        System.out.println("Recibiendo mensaje en nodo " + nodeId + ": " + message.getContent());
+    }
+
+    @Override
+    public void broadcastMessage(int fromNodeId, Message message) {
+        for (int i : adjList.get(fromNodeId)) {
+            sendMessage(fromNodeId, i, message);
+        }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+    }
+La clase TreeNetwork, que representa una red en forma de árbol. La red se implementa utilizando una lista de listas (adjList) para almacenar las conexiones entre nodos, y un ExecutorService con un pool de hilos de tamaño fijo (4 hilos) para manejar la concurrencia. La topología de la red se configura en el método setupTopology, donde cada nodo se conecta a su nodo padre según un esquema de árbol binario. Los métodos incluyen sendMessage para enviar mensajes entre nodos de manera concurrente, receiveMessage para recibir mensajes, y broadcastMessage para difundir mensajes a todos los nodos hijos. El método shutdown cierra el ExecutorService de manera ordenada cuando ya no se necesita.
 `FullyConnectedNetwork`
     
     public void setupTopology(int numberOfNodes) {
@@ -83,6 +142,35 @@ Implementaciones específicas de cada topología de red:
             }
             System.out.println("Configurando topología de red completamente conectada con " + numberOfNodes + " nodos.");
         }
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+        executorService.submit(() -> {
+            if (adjList.get(fromNodeId).contains(toNodeId)) {
+                System.out.println("Enviando mensaje desde nodo " + fromNodeId + " a nodo " + toNodeId + ": " + message.getContent());
+                receiveMessage(toNodeId, message);
+            } else {
+                System.out.println("Los nodos no están directamente conectados. No se puede enviar el mensaje.");
+            }
+        });
+    }
+
+    @Override
+    public void receiveMessage(int nodeId, Message message) {
+        System.out.println("Recibiendo mensaje en nodo " + nodeId + ": " + message.getContent());
+    }
+
+    @Override
+    public void broadcastMessage(int fromNodeId, Message message) {
+        for (int i = 0; i < numberOfNodes; i++) {
+            if (i != fromNodeId) {
+                sendMessage(fromNodeId, i, message);
+            }
+        }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+    }
+La clase `FullyConnectedNetwork`, que representa una red completamente conectada donde cada nodo está conectado a todos los demás nodos. Usa una lista de listas (`adjList`) para almacenar las conexiones y un `ExecutorService` con un pool de hilos de tamaño fijo (4 hilos) para manejar las tareas concurrentes. La clase incluye métodos para configurar la topología de la red (`setupTopology`), enviar mensajes entre nodos de forma concurrente (`sendMessage`), recibir mensajes (`receiveMessage`), y difundir mensajes a todos los nodos (`broadcastMessage`). También proporciona un método (`shutdown`) para cerrar el `ExecutorService` de manera ordenada cuando ya no se necesite.
 `SwitchedNetwork`
 
     public void setupTopology(int numberOfNodes) {
@@ -105,6 +193,46 @@ Implementaciones específicas de cada topología de red:
             // Imprimir la lista de adyacencia para depuración
             printAdjList();
         }
+        @Override
+    public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+        executorService.submit(() -> {
+            // Verificar si los nodos están correctamente conectados al conmutador central (nodo 0)
+            if ((fromNodeId == 0 || adjList.get(fromNodeId).contains(0)) &&
+                    (toNodeId == 0 || adjList.get(toNodeId).contains(0))) {
+                System.out.println("Enviando mensaje desde nodo " + fromNodeId + " a nodo " + toNodeId + " a través del conmutador central: " + message.getContent());
+                receiveMessage(toNodeId, message);
+            } else {
+                System.out.println("Los nodos no están conectados al conmutador central. No se puede enviar el mensaje.");
+            }
+        });
+    }
+
+    @Override
+    public void receiveMessage(int nodeId, Message message) {
+        System.out.println("Recibiendo mensaje en nodo " + nodeId + ": " + message.getContent());
+    }
+
+    @Override
+    public void broadcastMessage(int fromNodeId, Message message) {
+        for (int i = 1; i < numberOfNodes; i++) {
+            if (i != fromNodeId) {
+                sendMessage(fromNodeId, i, message);
+            }
+        }
+    }
+
+    // Método para imprimir la lista de adyacencia (para depuración)
+    private void printAdjList() {
+        for (int i = 0; i < adjList.size(); i++) {
+            System.out.println("Nodo " + i + " está conectado a: " + adjList.get(i));
+        }
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+    }
+La clase SwitchedNetwork, que modela una red conmutada donde todos los nodos están conectados a un conmutador central (representado por el nodo 0). La clase utiliza una lista de listas (adjList) para almacenar las conexiones y un ExecutorService con un pool de hilos de tamaño fijo (4 hilos) para manejar la concurrencia. El método setupTopology configura la topología de la red conectando cada nodo al conmutador central. Los métodos incluyen sendMessage para enviar mensajes entre nodos a través del conmutador central de manera concurrente, receiveMessage para recibir mensajes, y broadcastMessage para difundir mensajes a todos los nodos conectados. Además, proporciona un método shutdown para cerrar el ExecutorService de manera ordenada, y un método privado printAdjList para imprimir la lista de adyacencia con fines de depuración.
+
 ### Clase `Node`
 Representa un nodo en la red y contiene atributos como ID, vecinos, etc.
 
