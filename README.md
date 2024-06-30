@@ -590,6 +590,10 @@ Punto de entrada principal del programa, donde se configuran y ejecutan las topo
 
 En este proyecto se ejecutaron todas las topologias al mismo tiempo viendo los resultados de los mensajes enviados:
 
-Para probrar el framework simplemente hay que crear una instancian de framework manager y colocar en el contructor la topología de red que se desea utilizar, como por ejemplo:
+Para probrar el framework simplemente hay que crear una instancian de framework manager y colocar en el contructor la topología de red que se desea utilizar y luego llamar al método setup network, tanto al constructor como al método se le pasa la cantidad de nodos que tendrá la red. Aquí hay un ejemplo ejemplo:
+
+![Captura del codigo](https://github.com/Armandogl14/P3Paralela/blob/main/Screenshot%202024-06-30%20151805.png)
+
+
 
 
