@@ -1,11 +1,3 @@
-## Introducción
-
-La presente practica tiene como objetivo proporcionar una plataforma educativa donde los estudiantes puedan diseñar, implementar y evaluar un Framework para simular diversas topologías de redes de procesamiento paralelo. A través de esta práctica, los estudiantes desarrollarán una comprensión profunda de las características y aplicaciones de cada topología, y aprenderán a aplicar técnicas de programación concurrente para mejorar el rendimiento y la seguridad de las operaciones en redes paralelas.
-
-El Framework resultante permitirá a los usuarios configurar y ejecutar simulaciones de redes con diferentes topologías, analizar el comportamiento de los nodos bajo condiciones concurrentes y evaluar el rendimiento en escenarios diversos. Esta herramienta no solo servirá como un recurso educativo valioso, sino también como una base para futuras investigaciones y desarrollos en el ámbito del procesamiento paralelo y la arquitectura de redes.
-
-A lo largo de este documento, se detallarán los componentes clave del Framework, los requisitos de implementación y las instrucciones para su uso, proporcionando una guía completa para la creación de una herramienta robusta y extensible para el estudio de topologías de redes en procesamiento paralelo
-
 ## Requisitos de Programación Concurrente
 Además de implementar las topologías de redes, se incorporó programación concurrente en las implementaciones utilizando herramientas de concurrencia en Java, tales como:
 
@@ -23,6 +15,7 @@ Implementaciones específicas de cada topología de red:
 La clase BusNetwork implementa la interfaz NetworkTopology y simula una topología de red en bus. Aquí te explico cómo funciona:
 
 Características de la Topología en Bus
+
 En una topología en bus, todos los nodos están conectados a un único canal de comunicación. Esto significa que todos los mensajes enviados a través del bus pueden ser recibidos por todos los nodos, aunque normalmente solo el nodo destinatario procesa el mensaje.
 
 Implementación de BusNetwork
@@ -100,30 +93,36 @@ Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
 La clase RingNetwork implementa la interfaz NetworkTopology y simula una topología de red en anillo. Aquí te explico cómo funciona:
 
 Características de la Topología en Anillo
+
 En una topología en anillo, cada nodo está conectado exactamente a otros dos nodos, formando un anillo cerrado. Los mensajes son enviados a través del anillo en una dirección (normalmente unidireccional), pasando por cada nodo hasta llegar al destinatario.
 
 Implementación de RingNetwork
 
 Atributos:
+
 nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
 executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
 lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
 
 Constructor:
+
 Inicializa el ConcurrentHashMap para almacenar los nodos.
 Inicializa el ReentrantLock para controlar el acceso concurrente.
 Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
 
 Método setupTopology:
+
 Crea e inserta los nodos en el ConcurrentHashMap.
 Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
 
 Método sendMessage:
+
 Encola una tarea en el ExecutorService para enviar un mensaje desde un nodo a otro.
 Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo destino a la vez.
 Calcula el ID del siguiente nodo en el anillo (fromNodeId + 1) % nodes.size() y llama al método recieveMessage del nodo siguiente para entregarle el mensaje.
 
 Método receiveMessage:
+
 Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo receptor a la vez.
 Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
 
@@ -173,7 +172,100 @@ Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
         }
 
 `MeshNetwork`
+La clase MeshNetwork implementa la interfaz NetworkTopology y simula una topología de red en malla. Aquí te explico cómo funciona:
 
+Características de la Topología en Malla
+
+En una topología en malla, cada nodo está conectado a muchos otros nodos (potencialmente a todos los demás nodos). Esta topología proporciona redundancia y alta disponibilidad, ya que hay múltiples rutas posibles para que los mensajes lleguen a su destino.
+
+Implementación de MeshNetwork
+
+Atributos:
+
+nodes: Un ConcurrentHashMap que mapea los IDs de los nodos a los objetos Node.
+executor: Un ExecutorService para manejar la concurrencia, permitiendo la ejecución de tareas en múltiples hilos.
+lock: Un ReentrantLock para asegurar la exclusión mutua al modificar la estructura de datos compartida.
+
+Constructor:
+
+Inicializa el ConcurrentHashMap para almacenar los nodos.
+Inicializa el ReentrantLock para controlar el acceso concurrente.
+Inicializa el ExecutorService con un tamaño de pool de hilos igual al número de nodos.
+
+Método setupTopology:
+
+Crea e inserta los nodos en el ConcurrentHashMap.
+Utiliza el ReentrantLock para asegurar que la configuración de la topología no sea interrumpida por otros hilos.
+
+Método sendMessage:
+
+Encola una tarea en el ExecutorService para enviar un mensaje desde un nodo a otro.
+Utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo destino a la vez.
+Llama al método recieveMessage del nodo destino para entregarle el mensaje.
+
+Método receiveMessage:
+
+Similar a sendMessage, utiliza el ReentrantLock para asegurar que solo un hilo pueda acceder al nodo receptor a la vez.
+Entrega el mensaje al nodo receptor llamando a su método recieveMessage.
+
+Método broadcastMessage:
+
+Implementa el método por defecto de la interfaz NetworkTopology para enviar un mensaje a todos los nodos de la red.
+Utiliza un bucle para enviar el mensaje a todos los nodos excepto al nodo de origen (fromNodeId).
+    
+    public class MeshNetwork implements NetworkTopology{
+        private ConcurrentHashMap<Integer, Node> nodes;
+        private ExecutorService executor;
+        private ReentrantLock lock;
+
+        public MeshNetwork(int numberOfNodes){
+            nodes = new ConcurrentHashMap<>();
+            lock = new ReentrantLock();
+            executor = Executors.newFixedThreadPool(numberOfNodes);
+        }
+        
+        @Override
+        public void setupTopology(int numberOfNodes) {
+            lock.lock();
+            try {
+                for (int i = 0; i < numberOfNodes; i++) {
+                    nodes.put(i, new Node(i));
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void sendMessage(int fromNodeId, int toNodeId, Message message) {
+            executor.execute(() -> {
+                lock.lock();
+                try {
+                    nodes.get(toNodeId).recieveMessage(message);
+                } finally {
+                    lock.unlock();
+                }
+            });
+        }
+
+        @Override
+        public void receiveMessage(int nodeId, Message message) {
+            lock.lock();
+            try {
+                nodes.get(nodeId).recieveMessage(message);
+            } finally {
+            lock.unlock();
+            }
+        }
+
+        public void broadcastMessage(int fromNodeId, Message message) {
+            for (int nodeId : nodes.keySet()) {
+                if (nodeId != fromNodeId) {
+                    sendMessage(fromNodeId, nodeId, message);
+                }
+            }
+        }
+    }
 `StarNetwork`
 
 `HypercubeNetwork`
