@@ -1,4 +1,4 @@
-# P3 por Armando Gonzalez y Moises Rodriguez
+# P3 por Armando Gonzalez (1014-4198) y Moises Rodriguez (1014-5201)
 
 ## Requisitos de Programación Concurrente
 Además de implementar las topologías de redes, se incorporó programación concurrente en las implementaciones utilizando herramientas de concurrencia en Java, tales como:
